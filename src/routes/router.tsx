@@ -4,10 +4,15 @@ import Login from '../pages/login/Login';
 import Register from '../pages/register/Register';
 import Attendance from '../pages/record-attendance/Attendance';
 import ProtectedRoute from './ProtectedRoutes';
+import Header from '../components/Header/Header';
+import Footer from '../components/Footer/Footer';
+import DashboardRouter from '../pages/dashboard/DashboardRouter';
 
 export default function Router() {
   return (
     <BrowserRouter>
+      <Header />
+      <div className="h-20"></div>
       <Routes>
         <Route path="/" element={<Homepage />} />
         <Route path="/login" element={<Login />} />
@@ -15,12 +20,15 @@ export default function Router() {
 
         {/* <Route element={<ProtectedRoute />}> */}
         <Route path="/record-attendance" element={<Attendance />} />
+        <Route path="/dashboard/*" element={<DashboardRouter />} />
         {/* <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/test2" element={<test2 />} />
           <Route path="/test3" element={<test3 />} />
           <Route path="/test4" element={<test4 />} /> */}
         {/* </Route> */}
       </Routes>
+      <div className="h-20"></div>
+      <Footer />
     </BrowserRouter>
   );
 }
