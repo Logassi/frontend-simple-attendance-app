@@ -1,15 +1,22 @@
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import Swal from 'sweetalert2';
+import { api } from '../../services/api';
+import { useState } from 'react';
 
 export default function Register() {
+  // State for password visibility
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
   const formik = useFormik({
     initialValues: {
       fullName: '',
       email: '',
       password: '',
       confirmPassword: '',
-      company: '',
+      phoneNumber: '',
+      role: '1',
       agreeTerms: false,
     },
     validationSchema: Yup.object({
@@ -29,19 +36,30 @@ export default function Register() {
       confirmPassword: Yup.string()
         .oneOf([Yup.ref('password')], 'Passwords must match')
         .required('Please confirm your password'),
-      company: Yup.string().required('Company name is required'),
+      phoneNumber: Yup.string().required('Phone number is required'),
+      role: Yup.string()
+        .oneOf(['1', '2'], 'Please select a valid role')
+        .required('Role is required'),
       agreeTerms: Yup.boolean().oneOf(
         [true],
         'You must accept the terms and conditions',
       ),
     }),
-    onSubmit: async (values, { setSubmitting }) => {
+    onSubmit: async (values, { setSubmitting, resetForm }) => {
       try {
-        // Simulate API call
-        await new Promise((resolve) => setTimeout(resolve, 1500));
+        const userData = {
+          name: values.fullName,
+          email: values.email,
+          password: values.password,
+          phone_number: values.phoneNumber,
+          role_id: parseInt(values.role),
+        };
 
-        // Show success message
-        Swal.fire({
+        console.log('Sending to backend:', userData);
+
+        const response = await api.register(userData);
+
+        await Swal.fire({
           title: 'Registration Successful!',
           text: 'Your account has been created. Please check your email to verify your account.',
           icon: 'success',
@@ -53,12 +71,13 @@ export default function Register() {
           timerProgressBar: true,
         });
 
-        console.log('Registration values:', values);
-      } catch (error) {
-        // Show error message
-        Swal.fire({
+        resetForm();
+      } catch (error: any) {
+        await Swal.fire({
           title: 'Registration Failed',
-          text: 'An error occurred. Please try again.',
+          text:
+            error.response?.data?.message ||
+            'An error occurred. Please try again.',
           icon: 'error',
           background: '#0f172a',
           color: '#fff',
@@ -71,14 +90,26 @@ export default function Register() {
     },
   });
 
+  const roleOptions = [
+    { value: '1', label: 'Admin' },
+    { value: '2', label: 'Employee' },
+  ];
+
+  // Toggle password visibility
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
+  };
+
+  const toggleConfirmPasswordVisibility = () => {
+    setShowConfirmPassword(!showConfirmPassword);
+  };
+
   return (
     <section className="relative min-h-screen flex items-center justify-center pt-16 sm:pt-20 px-4 sm:px-16 lg:px-8 overflow-hidden bg-slate-950">
-      {/* Split Layout Container */}
       <div className="flex w-full max-w-7xl mx-auto bg-slate-900/90 backdrop-blur-sm rounded-3xl shadow-2xl overflow-hidden min-h-[600px] border border-slate-800">
         {/* Left Side - Register Form (50%) */}
         <div className="w-full lg:w-1/2 p-8 sm:p-12 flex items-center">
           <div className="w-full max-w-md mx-auto">
-            {/* Header */}
             <div className="text-center lg:text-left mb-8">
               <h1 className="text-3xl font-bold text-white mb-2">
                 Create Account
@@ -88,7 +119,6 @@ export default function Register() {
               </p>
             </div>
 
-            {/* Register Form */}
             <form onSubmit={formik.handleSubmit} className="space-y-5">
               {/* Full Name Field */}
               <div>
@@ -150,37 +180,83 @@ export default function Register() {
                 )}
               </div>
 
-              {/* Company Field */}
+              {/* Phone Number Field */}
               <div>
                 <label
-                  htmlFor="company"
+                  htmlFor="phoneNumber"
                   className="block text-sm font-medium text-gray-300 mb-2"
                 >
-                  Company Name
+                  Phone Number
                 </label>
                 <input
-                  id="company"
-                  name="company"
-                  type="text"
-                  autoComplete="organization"
+                  id="phoneNumber"
+                  name="phoneNumber"
+                  type="tel"
+                  autoComplete="tel"
                   onChange={formik.handleChange}
                   onBlur={formik.handleBlur}
-                  value={formik.values.company}
+                  value={formik.values.phoneNumber}
                   className={`w-full px-4 py-3 rounded-lg bg-slate-800/50 border ${
-                    formik.touched.company && formik.errors.company
+                    formik.touched.phoneNumber && formik.errors.phoneNumber
                       ? 'border-red-500 focus:ring-red-500'
                       : 'border-slate-700 focus:ring-blue-500'
                   } text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:border-transparent transition duration-200`}
-                  placeholder="Enter your company name"
+                  placeholder="Enter your phone number (10 digits)"
                 />
-                {formik.touched.company && formik.errors.company && (
+                {formik.touched.phoneNumber && formik.errors.phoneNumber && (
                   <p className="mt-1 text-sm text-red-400">
-                    {formik.errors.company}
+                    {formik.errors.phoneNumber}
                   </p>
                 )}
               </div>
 
-              {/* Password Field */}
+              {/* Role - Dropdown */}
+              <div>
+                <label
+                  htmlFor="role"
+                  className="block text-sm font-medium text-gray-300 mb-2"
+                >
+                  Role
+                </label>
+                <select
+                  id="role"
+                  name="role"
+                  onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
+                  value={formik.values.role}
+                  className={`w-full px-4 py-3 rounded-lg bg-slate-800/50 border ${
+                    formik.touched.role && formik.errors.role
+                      ? 'border-red-500 focus:ring-red-500'
+                      : 'border-slate-700 focus:ring-blue-500'
+                  } text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:border-transparent transition duration-200 cursor-pointer appearance-none`}
+                  style={{
+                    backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
+                    backgroundPosition: 'right 0.5rem center',
+                    backgroundRepeat: 'no-repeat',
+                    backgroundSize: '1.5em 1.5em',
+                  }}
+                >
+                  <option value="" disabled className="bg-slate-800">
+                    Select your role
+                  </option>
+                  {roleOptions.map((option) => (
+                    <option
+                      key={option.value}
+                      value={option.value}
+                      className="bg-slate-800"
+                    >
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+                {formik.touched.role && formik.errors.role && (
+                  <p className="mt-1 text-sm text-red-400">
+                    {formik.errors.role}
+                  </p>
+                )}
+              </div>
+
+              {/* Password Field with Peek */}
               <div>
                 <label
                   htmlFor="password"
@@ -188,21 +264,67 @@ export default function Register() {
                 >
                   Password
                 </label>
-                <input
-                  id="password"
-                  name="password"
-                  type="password"
-                  autoComplete="new-password"
-                  onChange={formik.handleChange}
-                  onBlur={formik.handleBlur}
-                  value={formik.values.password}
-                  className={`w-full px-4 py-3 rounded-lg bg-slate-800/50 border ${
-                    formik.touched.password && formik.errors.password
-                      ? 'border-red-500 focus:ring-red-500'
-                      : 'border-slate-700 focus:ring-blue-500'
-                  } text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:border-transparent transition duration-200`}
-                  placeholder="Create a password"
-                />
+                <div className="relative">
+                  <input
+                    id="password"
+                    name="password"
+                    type={showPassword ? 'text' : 'password'}
+                    autoComplete="new-password"
+                    onChange={formik.handleChange}
+                    onBlur={formik.handleBlur}
+                    value={formik.values.password}
+                    className={`w-full px-4 py-3 pr-12 rounded-lg bg-slate-800/50 border ${
+                      formik.touched.password && formik.errors.password
+                        ? 'border-red-500 focus:ring-red-500'
+                        : 'border-slate-700 focus:ring-blue-500'
+                    } text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:border-transparent transition duration-200`}
+                    placeholder="Create a password"
+                  />
+                  <button
+                    type="button"
+                    onClick={togglePasswordVisibility}
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-300 focus:outline-none"
+                  >
+                    {showPassword ? (
+                      // Eye slash icon (password hidden)
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        strokeWidth={1.5}
+                        stroke="currentColor"
+                        className="w-5 h-5"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88"
+                        />
+                      </svg>
+                    ) : (
+                      // Eye icon (password visible)
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        strokeWidth={1.5}
+                        stroke="currentColor"
+                        className="w-5 h-5"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"
+                        />
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                        />
+                      </svg>
+                    )}
+                  </button>
+                </div>
                 {formik.touched.password && formik.errors.password && (
                   <p className="mt-1 text-sm text-red-400">
                     {formik.errors.password}
@@ -210,7 +332,7 @@ export default function Register() {
                 )}
               </div>
 
-              {/* Confirm Password Field */}
+              {/* Confirm Password Field with Peek */}
               <div>
                 <label
                   htmlFor="confirmPassword"
@@ -218,22 +340,66 @@ export default function Register() {
                 >
                   Confirm Password
                 </label>
-                <input
-                  id="confirmPassword"
-                  name="confirmPassword"
-                  type="password"
-                  autoComplete="new-password"
-                  onChange={formik.handleChange}
-                  onBlur={formik.handleBlur}
-                  value={formik.values.confirmPassword}
-                  className={`w-full px-4 py-3 rounded-lg bg-slate-800/50 border ${
-                    formik.touched.confirmPassword &&
-                    formik.errors.confirmPassword
-                      ? 'border-red-500 focus:ring-red-500'
-                      : 'border-slate-700 focus:ring-blue-500'
-                  } text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:border-transparent transition duration-200`}
-                  placeholder="Confirm your password"
-                />
+                <div className="relative">
+                  <input
+                    id="confirmPassword"
+                    name="confirmPassword"
+                    type={showConfirmPassword ? 'text' : 'password'}
+                    autoComplete="new-password"
+                    onChange={formik.handleChange}
+                    onBlur={formik.handleBlur}
+                    value={formik.values.confirmPassword}
+                    className={`w-full px-4 py-3 pr-12 rounded-lg bg-slate-800/50 border ${
+                      formik.touched.confirmPassword &&
+                      formik.errors.confirmPassword
+                        ? 'border-red-500 focus:ring-red-500'
+                        : 'border-slate-700 focus:ring-blue-500'
+                    } text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:border-transparent transition duration-200`}
+                    placeholder="Confirm your password"
+                  />
+                  <button
+                    type="button"
+                    onClick={toggleConfirmPasswordVisibility}
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-300 focus:outline-none"
+                  >
+                    {showConfirmPassword ? (
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        strokeWidth={1.5}
+                        stroke="currentColor"
+                        className="w-5 h-5"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88"
+                        />
+                      </svg>
+                    ) : (
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        strokeWidth={1.5}
+                        stroke="currentColor"
+                        className="w-5 h-5"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"
+                        />
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                        />
+                      </svg>
+                    )}
+                  </button>
+                </div>
                 {formik.touched.confirmPassword &&
                   formik.errors.confirmPassword && (
                     <p className="mt-1 text-sm text-red-400">
@@ -299,7 +465,6 @@ export default function Register() {
                 )}
               </button>
 
-              {/* Sign In Link */}
               <p className="text-center text-sm text-gray-400 mt-6">
                 Already have an account?{' '}
                 <a
@@ -313,12 +478,11 @@ export default function Register() {
           </div>
         </div>
 
-        {/* Right Side - Product Image (50%) */}
+        {/* Right Side - Product Image */}
         <div className="hidden lg:block lg:w-1/2 relative bg-gradient-to-br from-blue-600/20 to-purple-600/20 overflow-hidden">
           <div className="absolute inset-0 bg-black/20 mix-blend-multiply"></div>
           <div className="absolute inset-0 flex items-center justify-center p-12">
             <div className="text-white text-center">
-              {/* Product Image */}
               <div className="mb-8 relative">
                 <div className="w-80 h-80 mx-auto relative">
                   <div className="absolute inset-0 bg-white/20 rounded-full blur-3xl"></div>

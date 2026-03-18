@@ -23,20 +23,23 @@ export const api = {
 
   // Users
   register: (data: RegisterData) =>
-    apiClient.post<User>('/users/register', data),
+    apiClient.post<User>('api/v1/users/register', data),
 
   login: (credentials: LoginCredentials) =>
-    apiClient.post<{ token: string; user: User }>('/users/login', credentials),
+    apiClient.post<{ token: string; user: User }>(
+      'api/v1/users/login',
+      credentials,
+    ),
 
-  getUsers: () => apiClient.get<User[]>('/users'),
+  getUsers: () => apiClient.get<User[]>('api/v1/users'),
 
-  getUser: (id: string) => apiClient.get<User>(`/users/${id}`),
+  getUser: (id: string) => apiClient.get<User>(`api/v1/users/${id}`),
 
   getUserByEmail: (email: string) =>
-    apiClient.get<User>(`/users/email/${email}`),
+    apiClient.get<User>(`api/v1/users/email/${email}`),
 
   updateUser: (id: string, data: Partial<User>) =>
-    apiClient.patch<User>(`/users/${id}`, data),
+    apiClient.patch<User>(`api/v1/users/${id}`, data),
 
-  deleteUser: (id: string) => apiClient.delete(`/users/${id}`),
+  deleteUser: (id: string) => apiClient.delete(`api/v1/users/${id}`),
 };
