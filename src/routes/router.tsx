@@ -19,15 +19,15 @@ export default function Router() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
 
-        {/* <Route element={<ProtectedRoute />}> */}
-        <Route path="/record-attendance" element={<Attendance />} />
-        <Route path="/dashboard/*" element={<DashboardRouter />} />
-        {/* <Route path="/dashboard" element={<Dashboard />} />
+        <Route element={<ProtectedRoute />}>
+          <Route path="/record-attendance" element={<Attendance />} />
+          <Route path="/dashboard/*" element={<DashboardRouter />} />
+          {/* <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/test2" element={<test2 />} />
           <Route path="/test3" element={<test3 />} />
           <Route path="/test4" element={<test4 />} /> */}
-        {/* </Route> */}
-        <Route path="/test" element={<ApiTest />} />
+        </Route>
+        {/* <Route path="/test" element={<ApiTest />} /> */}
       </Routes>
       <div className="h-20"></div>
       <Footer />

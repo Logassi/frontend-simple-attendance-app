@@ -1,4 +1,3 @@
-// routes/ProtectedRoutes.tsx
 import { Navigate, Outlet } from 'react-router-dom';
 import useAuthStore from '../utils/store/useAuthStore';
 
@@ -17,7 +16,7 @@ export default function ProtectedRoute({ allowedRoles }: ProtectedRouteProps) {
   // If roles are specified, check if user has required role
   if (
     allowedRoles &&
-    !allowedRoles.includes(user?.role as 'admin' | 'employee')
+    !allowedRoles.includes(user?.role_id as 'admin' | 'employee')
   ) {
     return <Navigate to="/unauthorized" replace />;
   }

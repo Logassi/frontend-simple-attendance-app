@@ -5,6 +5,7 @@ export interface User {
   id: string;
   email: string;
   name?: string;
+  role_id?: 1 | 2; // 1 for admin, 2 for employee
   // add other fields
 }
 

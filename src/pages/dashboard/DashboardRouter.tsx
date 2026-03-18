@@ -9,7 +9,7 @@ import EmployeeDashboard from './EmployeeDashboard';
 function DashboardRedirect() {
   const { user } = useAuthStore();
 
-  if (user?.role === 'admin') {
+  if (user?.role_id === 'admin') {
     return <Navigate to="/dashboard/admin" replace />;
   }
 
@@ -24,12 +24,12 @@ export default function DashboardRouter() {
       <Route index element={<DashboardRedirect />} />
 
       {/* Employee routes */}
-      {/* <Route element={<ProtectedRoute allowedRoles={['employee']} />}>
+      <Route element={<ProtectedRoute allowedRoles={['employee']} />}>
         <Route path="employee" element={<EmployeeDashboard />} />
-      </Route> */}
+      </Route>
 
       {/* Admin routes */}
-      {/* <Route element={<ProtectedRoute allowedRoles={['admin']} />}>
+      <Route element={<ProtectedRoute allowedRoles={['admin']} />}>
         <Route path="admin" element={<AdminDashboard />} />
         <Route
           path="admin/employees"
@@ -37,11 +37,11 @@ export default function DashboardRouter() {
         />
         <Route path="admin/reports" element={<div>Reports</div>} />
         <Route path="admin/settings" element={<div>Settings</div>} />
-      </Route> */}
+      </Route>
 
       {/* for testing */}
-      <Route path="admin" element={<AdminDashboard />} />
-      <Route path="employee" element={<EmployeeDashboard />} />
+      {/* <Route path="admin" element={<AdminDashboard />} />
+      <Route path="employee" element={<EmployeeDashboard />} /> */}
     </Routes>
   );
 }
