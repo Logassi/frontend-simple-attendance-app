@@ -7,6 +7,7 @@ import ProtectedRoute from './ProtectedRoutes';
 import Header from '../components/Header/Header';
 import Footer from '../components/Footer/Footer';
 import DashboardRouter from '../pages/dashboard/DashboardRouter';
+import { ApiTest } from '../pages/test-connection/ApiTest';
 
 export default function Router() {
   return (
@@ -26,6 +27,7 @@ export default function Router() {
           <Route path="/test3" element={<test3 />} />
           <Route path="/test4" element={<test4 />} /> */}
         {/* </Route> */}
+        <Route path="/test" element={<ApiTest />} />
       </Routes>
       <div className="h-20"></div>
       <Footer />
