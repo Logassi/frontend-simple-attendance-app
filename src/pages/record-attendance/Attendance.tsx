@@ -5,29 +5,62 @@ import { handleCaptureTime } from '../../utils/captureTime.util';
 export default function Attendance() {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const photoRef = useRef<HTMLCanvasElement | null>(null);
+  const streamRef = useRef<MediaStream | null>(null); // Store stream reference
 
   const [hasPhoto, setHasPhoto] = useState(false);
-  const [photoBlob, setPhotoBlob] = useState<Blob | null>(null); // Store the photo
+  const [photoBlob, setPhotoBlob] = useState<Blob | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [cameraError, setCameraError] = useState<string | null>(null);
 
   // Get user from auth store
   const { user } = useAuthStore();
 
-  const getVideo = () => {
-    navigator.mediaDevices
-      .getUserMedia({
-        video: { width: 1920, height: 1080 },
-      })
-      .then((stream) => {
-        const video = videoRef.current;
-        if (video) {
-          video.srcObject = stream;
-          video.play();
-        }
-      })
-      .catch((err) => {
-        console.error('Error accessing camera:', err);
+  // Function to stop all camera tracks
+  const stopCamera = () => {
+    if (streamRef.current) {
+      const tracks = streamRef.current.getTracks();
+      tracks.forEach((track) => {
+        track.stop();
+        console.log('Camera track stopped:', track.kind);
       });
+      streamRef.current = null;
+    }
+
+    // Also clear video source
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+    }
+  };
+
+  const getVideo = async () => {
+    try {
+      setCameraError(null);
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          width: 1920,
+          height: 1080,
+          facingMode: 'user', // Prefer front camera for selfies
+        },
+      });
+
+      // Store stream reference
+      streamRef.current = stream;
+
+      const video = videoRef.current;
+      if (video) {
+        video.srcObject = stream;
+        await video.play();
+      }
+    } catch (err: any) {
+      console.error('Error accessing camera:', err);
+      setCameraError(
+        err.name === 'NotAllowedError'
+          ? 'Camera access denied. Please allow camera access.'
+          : err.name === 'NotFoundError'
+            ? 'No camera found on this device.'
+            : 'Failed to access camera. Please try again.',
+      );
+    }
   };
 
   const takePhoto = () => {
@@ -35,6 +68,7 @@ export default function Attendance() {
     const height = width / (16 / 9);
     const video = videoRef.current;
     const photo = photoRef.current;
+
     if (video && photo) {
       photo.width = width;
       photo.height = height;
@@ -47,6 +81,9 @@ export default function Attendance() {
           if (blob) {
             setPhotoBlob(blob);
             setHasPhoto(true);
+
+            // Pause video but don't stop camera (optional)
+            video.pause();
           }
         }, 'image/jpeg');
       }
@@ -55,6 +92,8 @@ export default function Attendance() {
 
   const closePhoto = () => {
     const photo = photoRef.current;
+    const video = videoRef.current;
+
     if (photo) {
       const ctx = photo.getContext('2d');
       if (ctx) {
@@ -62,6 +101,11 @@ export default function Attendance() {
         setHasPhoto(false);
         setPhotoBlob(null);
       }
+    }
+
+    // Resume video if it was paused
+    if (video && streamRef.current) {
+      video.play().catch(console.error);
     }
   };
 
@@ -73,27 +117,18 @@ export default function Attendance() {
       // Create a unique filename
       const fileName = `${user.id}/${Date.now()}.jpg`;
 
-      // // Upload to Supabase storage
-      // const { data, error } = await supabase.storage
-      //   .from('attendance-photos') // your bucket name
-      //   .upload(fileName, photoBlob, {
-      //     contentType: 'image/jpeg',
-      //     cacheControl: '3600',
-      //   });
+      // Your upload logic here...
+      console.log('Uploading photo:', fileName);
 
-      // if (error) throw error;
-
-      // // Get public URL
-      // const {
-      //   data: { publicUrl },
-      // } = supabase.storage.from('attendance-photos').getPublicUrl(fileName);
-
-      // Here you can also save the URL to your database
-      // console.log('Photo uploaded:', publicUrl);
+      // Simulate upload
+      await new Promise((resolve) => setTimeout(resolve, 1500));
 
       // Show success message
-      // Optionally reset the form
+      alert('Photo uploaded successfully!');
+
+      // Reset and stop camera
       closePhoto();
+      stopCamera(); // Stop camera after successful upload
     } catch (error) {
       console.error('Error uploading photo:', error);
     } finally {
@@ -101,9 +136,17 @@ export default function Attendance() {
     }
   };
 
+  // Cleanup on component unmount
   useEffect(() => {
+    // Start camera when component mounts
     getVideo();
-  }, []); // Remove videoRef dependency
+
+    // Cleanup function runs when component unmounts
+    return () => {
+      console.log('Cleaning up camera...');
+      stopCamera();
+    };
+  }, []); // Empty dependency array = run once on mount
 
   return (
     <section className="relative min-h-screen flex items-center justify-center pt-16 sm:pt-20 px-4 sm:px-16 lg:px-8 overflow-hidden bg-slate-950">
@@ -112,14 +155,24 @@ export default function Attendance() {
           Record Attendance
         </div>
 
+        {/* Camera Error Display */}
+        {cameraError && (
+          <div className="mb-4 p-4 bg-red-900/50 border border-red-700 rounded-lg text-red-200">
+            {cameraError}
+          </div>
+        )}
+
         <div className="space-y-4">
           {/* Camera View */}
           <div className="camera">
             <video
               ref={videoRef}
+              autoPlay
+              playsInline
+              muted
               className="w-full max-w-lg rounded-lg border border-slate-700"
             />
-            {!hasPhoto && (
+            {!hasPhoto && !cameraError && (
               <button
                 className="mt-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-bold py-2 px-4 rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all"
                 onClick={() => {
